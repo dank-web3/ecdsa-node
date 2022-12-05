@@ -1,28 +1,53 @@
 import { useState } from "react";
+import { keccak256 } from "ethereum-cryptography/keccak";
+import { utf8ToBytes } from "ethereum-cryptography/utils";
+import { sign } from "ethereum-cryptography/secp256k1";
+
 import server from "./server";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
+  const [privateKey, setPrivateKey] = useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
   async function transfer(evt) {
     evt.preventDefault();
-
-    try {
-      const {
-        data: { balance },
-      } = await server.post(`send`, {
-        sender: address,
-        amount: parseInt(sendAmount),
-        recipient,
-      });
-      setBalance(balance);
-    } catch (ex) {
-      alert(ex.response.data.message);
-    }
+    console.log(sendAmount, recipient, privateKey);
+    const signedMessage = await signMessage();
+    console.log(signedMessage);
+    // try {
+    //   const {
+    //     data: { balance },
+    //   } = await server.post(`send`, {
+    //     sender: address,
+    //     amount: parseInt(sendAmount),
+    //     recipient,
+    //   });
+    //   setBalance(balance);
+    // } catch (ex) {
+    //   alert(ex.response.data.message);
+    // }
   }
+
+  const hashMessage = (message) => {
+    const bytes = utf8ToBytes(message);
+    return keccak256(bytes);
+  };
+
+  const signMessage = async () => {
+    const hash = hashMessage(
+      JSON.stringify({
+        sendAmount,
+        recipient,
+      })
+    );
+    const signedMessage = await sign(hash, privateKey, {
+      recovered: true,
+    });
+    return signedMessage;
+  };
 
   return (
     <form className="container transfer" onSubmit={transfer}>
@@ -36,13 +61,20 @@ function Transfer({ address, setBalance }) {
           onChange={setValue(setSendAmount)}
         ></input>
       </label>
-
       <label>
         Recipient
         <input
           placeholder="Type an address, for example: 0x2"
           value={recipient}
           onChange={setValue(setRecipient)}
+        ></input>
+      </label>
+      <label>
+        Private Key
+        <input
+          placeholder="Enter private key..."
+          value={privateKey}
+          onChange={setValue(setPrivateKey)}
         ></input>
       </label>
 
