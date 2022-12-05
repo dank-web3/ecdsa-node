@@ -9,15 +9,18 @@ app.use(cors());
 app.use(express.json());
 
 const balances = {
-  "0x1": 100,
-  "0x2": 50,
-  "0x3": 75,
+  "047413efb01fe2ae43a5b952d966fab5f13ac403ba17edd804a068159b9e6d08a89debd6f688d7be6d672151f7566aff8c3626ab794efa35013236bd9c91176ede": 100,
+  "044162636e9c90a11f37a236e198019dc0ee41efc2184f906b998147c35b27132579fb047d43eac8e63af9843ea36ddca9da26bda2e0213e538397843c90a8faf9": 50,
+  "04e967bfed84118267c656d1e1923c582839e782674c64609c367df0a897bba2eb340b0af461d93f3b7df5defff899d34169efcef7a85151a6bebd30e65ebdbd80": 75,
 };
 
 const privateKeys = {
-  "0x1": "9184cfbfeafb6a36c783c9b14031887301d6d9e921a859aa332aba1bc7bd62bb",
-  "0x2": "a12fea22225fccdf1b943339a7c199010ce6087ac8494f309c2bcc2e3e93fa08",
-  "0x3": "777362d484421c3793b90bda30de252e64b359a227ea8fcddfc6485fd0e63451",
+  "047413efb01fe2ae43a5b952d966fab5f13ac403ba17edd804a068159b9e6d08a89debd6f688d7be6d672151f7566aff8c3626ab794efa35013236bd9c91176ede":
+    "3bf9d28c1dda4721c7a03d0d22afcfbda0b255b8cad768e68989c7409dd92fcf",
+  "044162636e9c90a11f37a236e198019dc0ee41efc2184f906b998147c35b27132579fb047d43eac8e63af9843ea36ddca9da26bda2e0213e538397843c90a8faf9":
+    "e69937090fde85c8ab334d85f4ad01d6770d13ca95f110afb0c8109c2493369d",
+  "04e967bfed84118267c656d1e1923c582839e782674c64609c367df0a897bba2eb340b0af461d93f3b7df5defff899d34169efcef7a85151a6bebd30e65ebdbd80":
+    "b3ec28e6a37f4ab7b3a664ccd37cc83ed46ff30edaf1da3d33cb7d834c06dd07",
 };
 
 app.get("/balance/:address", (req, res) => {
@@ -25,7 +28,6 @@ app.get("/balance/:address", (req, res) => {
   const balance = balances[address] || 0;
   res.send({ balance });
 });
-
 
 app.post("/send", (req, res) => {
   const { sender, recipient, amount } = req.body;
