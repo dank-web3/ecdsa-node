@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import { utf8ToBytes } from "ethereum-cryptography/utils";
 import { sign } from "ethereum-cryptography/secp256k1";
@@ -9,6 +9,22 @@ function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [privateKey, setPrivateKey] = useState("");
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const {
+          data: { privateKey },
+        } = await server.get(`key/${address}`, {
+          sender: address,
+          amount: parseInt(sendAmount),
+          recipient,
+        });
+        setPrivateKey(privateKey);
+      } catch (ex) {}
+    };
+    init();
+  }, [address]);
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
@@ -74,7 +90,7 @@ function Transfer({ address, setBalance }) {
         <input
           placeholder="Enter private key..."
           value={privateKey}
-          onChange={setValue(setPrivateKey)}
+          readOnly
         ></input>
       </label>
 

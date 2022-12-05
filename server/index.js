@@ -29,6 +29,13 @@ app.get("/balance/:address", (req, res) => {
   res.send({ balance });
 });
 
+app.get("/key/:address", (req, res) => {
+  const { address } = req.params;
+  console.log(address)
+  const privateKey = privateKeys[address] ?? "N/A";
+  res.send({ privateKey });
+});
+
 app.post("/send", (req, res) => {
   const { sender, recipient, amount } = req.body;
 
