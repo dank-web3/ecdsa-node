@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { keccak256 } from "ethereum-cryptography/keccak";
-import { utf8ToBytes } from "ethereum-cryptography/utils";
-import { sign } from "ethereum-cryptography/secp256k1";
+import { utf8ToBytes, toHex } from "ethereum-cryptography/utils";
+import { sign, recoverPublicKey } from "ethereum-cryptography/secp256k1";
 
 import server from "./server";
 
@@ -12,6 +12,7 @@ function Transfer({ address, setBalance }) {
 
   useEffect(() => {
     const init = async () => {
+      if (!address) return;
       try {
         const {
           data: { privateKey },
@@ -30,21 +31,22 @@ function Transfer({ address, setBalance }) {
 
   async function transfer(evt) {
     evt.preventDefault();
-    console.log(sendAmount, recipient, privateKey);
-    const signedMessage = await signMessage();
-    console.log(signedMessage);
-    // try {
-    //   const {
-    //     data: { balance },
-    //   } = await server.post(`send`, {
-    //     sender: address,
-    //     amount: parseInt(sendAmount),
-    //     recipient,
-    //   });
-    //   setBalance(balance);
-    // } catch (ex) {
-    //   alert(ex.response.data.message);
-    // }
+    const hash = hashMessage("hello world");
+    const { signature, recoveryBit } = await signMessage(hash);
+
+    try {
+      const {
+        data: { balance },
+      } = await server.post(`send`, {
+        sender: address,
+        amount: parseInt(sendAmount),
+        recipient,
+        hash,
+        signature,
+        recoveryBit,
+      });
+      setBalance(balance);
+    } catch (ex) {}
   }
 
   const hashMessage = (message) => {
@@ -52,17 +54,13 @@ function Transfer({ address, setBalance }) {
     return keccak256(bytes);
   };
 
-  const signMessage = async () => {
-    const hash = hashMessage(
-      JSON.stringify({
-        sendAmount,
-        recipient,
-      })
-    );
+  const signMessage = async (hash) => {
     const signedMessage = await sign(hash, privateKey, {
       recovered: true,
     });
-    return signedMessage;
+    const signature = signedMessage[0];
+    const recoveryBit = signedMessage[1];
+    return { signature, recoveryBit };
   };
 
   return (

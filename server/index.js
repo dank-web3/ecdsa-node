@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const port = 3042;
-const secp = require("ethereum-cryptography/secp256k1");
+const { recoverPublicKey } = require("ethereum-cryptography/secp256k1");
 const { toHex } = require("ethereum-cryptography/utils");
 
 app.use(cors());
@@ -31,23 +31,43 @@ app.get("/balance/:address", (req, res) => {
 
 app.get("/key/:address", (req, res) => {
   const { address } = req.params;
-  console.log(address)
   const privateKey = privateKeys[address] ?? "N/A";
   res.send({ privateKey });
 });
 
 app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+  const { sender, recipient, amount, hash, signature, recoveryBit } = req.body;
+  const parsedSignature = new Uint8Array(
+    Object.keys(signature).map((i) => signature[i])
+  );
+  const parsedHash = new Uint8Array(Object.keys(hash).map((i) => hash[i]));
 
-  setInitialBalance(sender);
-  setInitialBalance(recipient);
+  try {
+    const publicKey = recoverPublicKey(
+      parsedHash,
+      parsedSignature,
+      recoveryBit
+    );
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
-    balances[sender] -= amount;
-    balances[recipient] += amount;
-    res.send({ balance: balances[sender] });
+    if (toHex(publicKey) !== sender) {
+      res.status(400).send({ message: "Not your account!" });
+      return;
+    }
+
+    setInitialBalance(sender);
+    setInitialBalance(recipient);
+
+    if (balances[sender] < amount) {
+      res.status(400).send({ message: "Not enough funds!" });
+      return;
+    } else {
+      balances[sender] -= amount;
+      balances[recipient] += amount;
+      res.send({ balance: balances[sender] });
+    }
+  } catch (e) {
+    res.status(500).send({ message: e.message });
+    return;
   }
 });
 
